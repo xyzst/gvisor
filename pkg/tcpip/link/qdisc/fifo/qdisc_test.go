@@ -31,7 +31,7 @@ var _ stack.LinkWriter = (*discardWriter)(nil)
 type discardWriter struct {
 }
 
-func (*discardWriter) WritePackets(_ stack.RouteInfo, pkts stack.PacketBufferList, _ tcpip.NetworkProtocolNumber) (int, tcpip.Error) {
+func (*discardWriter) WritePackets(pkts stack.PacketBufferList) (int, tcpip.Error) {
 	return pkts.Len(), nil
 }
 
@@ -60,7 +60,9 @@ func TestFastSimultaneousWrites(t *testing.T) {
 					Data: v.ToVectorisedView(),
 				})
 				pkt.Hash = rand.Uint32()
-				linkEP.WritePacket(r, prot, pkt)
+				pkt.EgressRoute = r
+				pkt.NetworkProtocolNumber = prot
+				linkEP.WritePacket(pkt)
 				pkt.DecRef()
 			}
 		}()

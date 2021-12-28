@@ -77,7 +77,7 @@ func (*stubLinkEndpoint) LinkAddress() tcpip.LinkAddress {
 	return ""
 }
 
-func (*stubLinkEndpoint) WritePackets(stack.RouteInfo, stack.PacketBufferList, tcpip.NetworkProtocolNumber) (int, tcpip.Error) {
+func (*stubLinkEndpoint) WritePackets(stack.PacketBufferList) (int, tcpip.Error) {
 	return 0, nil
 }
 
@@ -130,20 +130,21 @@ func (*testInterface) Spoofing() bool {
 	return false
 }
 
-func (t *testInterface) WritePacket(r *stack.Route, protocol tcpip.NetworkProtocolNumber, pkt *stack.PacketBuffer) tcpip.Error {
+func (t *testInterface) WritePacket(r *stack.Route, pkt *stack.PacketBuffer) tcpip.Error {
+	pkt.EgressRoute = r.Fields()
 	var pkts stack.PacketBufferList
 	pkts.PushBack(pkt)
-	_, err := t.LinkEndpoint.WritePackets(r.Fields(), pkts, protocol)
+	_, err := t.LinkEndpoint.WritePackets(pkts)
 	return err
 }
 
 func (t *testInterface) WritePacketToRemote(remoteLinkAddr tcpip.LinkAddress, protocol tcpip.NetworkProtocolNumber, pkt *stack.PacketBuffer) tcpip.Error {
-	var r stack.RouteInfo
-	r.NetProto = protocol
-	r.RemoteLinkAddress = remoteLinkAddr
+	pkt.EgressRoute.NetProto = protocol
+	pkt.EgressRoute.RemoteLinkAddress = remoteLinkAddr
+	pkt.NetworkProtocolNumber = protocol
 	var pkts stack.PacketBufferList
 	pkts.PushBack(pkt)
-	_, err := t.LinkEndpoint.WritePackets(r, pkts, protocol)
+	_, err := t.LinkEndpoint.WritePackets(pkts)
 	return err
 }
 

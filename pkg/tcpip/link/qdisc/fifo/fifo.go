@@ -88,9 +88,7 @@ func (q *queueDispatcher) dispatchLoop() {
 			if batch.Len() < batchSize && !q.queue.empty() {
 				continue
 			}
-			// We pass a protocol of zero here because each packet carries its
-			// NetworkProtocol.
-			q.lower.WritePackets(stack.RouteInfo{}, batch, 0 /* protocol */)
+			q.lower.WritePackets(batch)
 			batch.DecRef()
 			batch.Reset()
 		}
@@ -103,7 +101,7 @@ func (q *queueDispatcher) dispatchLoop() {
 //  - pkt.EgressRoute
 //  - pkt.GSOOptions
 //  - pkt.NetworkProtocolNumber
-func (d *discipline) WritePacket(_ stack.RouteInfo, _ tcpip.NetworkProtocolNumber, pkt *stack.PacketBuffer) tcpip.Error {
+func (d *discipline) WritePacket(pkt *stack.PacketBuffer) tcpip.Error {
 	qd := &d.dispatchers[int(pkt.Hash)%len(d.dispatchers)]
 	if !qd.queue.enqueue(pkt) {
 		return &tcpip.ErrNoBufferSpace{}
